@@ -117,7 +117,7 @@ exit
 * Restart and reuse your named container without data loss:
 
 ```bash
-docker start -ai bevfusion-original-dev
+docker start -ai bevfusion-original-dev-gpu
 ```
 
 * You can directly re-run evaluations or training as required inside this container.
