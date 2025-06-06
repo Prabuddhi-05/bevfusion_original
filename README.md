@@ -45,38 +45,13 @@ Run the following commands:
 
 ```bash
 cd /home
-git clone https://github.com/mit-han-lab/bevfusion
-OR
-git clone https://github.com/Prabuddhi-05/bevfusion.git # Repo with all the modifications mentioned below (except numpy installation)
 cd bevfusion
-
 python setup.py develop # Install BEVFusion in development mode
-
 mkdir -p data
 ln -s /dataset ./data/nuscenes # Create a symbolic link to connect the dataset on the host machine to Docker 
 ```
 
-### 4. Fix known issues
-
-**Feature decorator issue**:
-
-* Comment the following line in `/home/bevfusion/mmdet3d/ops/__init__.py`:
-
-```python
-# from .feature_decorator import feature_decorator
-```
-
-* In `/home/bevfusion/mmdet3d/models/backbones/radar_encoder.py`:
-
-```python
-# from mmdet3d.ops import feature_decorator
-```
-
-* In `/home/bevfusion/mmdet3d/models/backbones/__init__.py`:
-
-```python
-# from .radar_encoder import *
-```
+### 4. Fix NumPY related error
 
 **NumPy attributeError**:
 
@@ -112,48 +87,26 @@ sudo bash -c "echo '/swapfile none swap sw 0 0' >> /etc/fstab"
 * Comment out `create_groundtruth_database(...)` in `/home/bevfusion/tools/create_data.py`
 
 
-### 7. Modify converter for all data types
-
-* Modify `nuscenes_converter.py` in `/home/bevfusion/tools/data_converter` to preprocess all nuScenes data (LiDAR, Camera, and Radar data).
-
-### 8. Run preprocessing:
+### 7. Run preprocessing:
 
 ```bash
 python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes --version v1.0
 ```
 
-### 9. Download pre-trained weights
+### 8. Download pre-trained weights
 
 ```bash
 ./tools/download_pretrained.sh
 ```
 
-### 10. Fix depth map channel mismatch
-
-* Edit `/home/bevfusion/mmdet3d/models/vtransforms/depth_lss.py`:
-
-Replace:
-
-```python
-d = self.dtransform(d)
-```
-
-With:
-
-```python
-if d.shape[1] != 1:
-    d = d.mean(dim=1, keepdim=True)
-d = self.dtransform(d)
-```
-
-### 11. Run evaluation
+### 9. Run evaluation
 
 ```bash
 torchpack dist-run -np 1 python tools/test.py \
   configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/convfuser.yaml \
   pretrained/bevfusion-det.pth --eval bbox
 ```
-### 12. Exit the container (While progress is being saved)
+### 10. Exit the container (While progress is being saved)
 ```bash
 exit
 
@@ -164,7 +117,7 @@ exit
 * Restart and reuse your named container without data loss:
 
 ```bash
-docker start -ai bevfusion-dev
+docker start -ai bevfusion-original-dev
 ```
 
 * You can directly re-run evaluations or training as required inside this container.
