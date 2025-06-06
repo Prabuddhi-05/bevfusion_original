@@ -16,7 +16,7 @@ Created and re-used a named Docker container (**bevfusion**) for convenient inte
 Run this command only if the Dockerfile has been updated:
 
 ```bash
-docker build -t bevfusion .
+docker build -t bevfusion_original .
 ```
 
 ### 2. Create and run a named Docker container
