@@ -127,3 +127,18 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ignore folders with large or generated content
+build/
+data/
+mmdet3d.egg-info/
+pretrained/
+results/
+
+# Ignore common unnecessary files
+*.pth
+*.log
+*.ckpt
+*.pyc
+__pycache__/
+
