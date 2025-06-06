@@ -23,9 +23,11 @@ docker build -t bevfusion_original .
 
 ```bash
 docker run --gpus all -it \
-  --name bevfusion-dev \
+  --name bevfusion-original-dev-gpu \
+  -v "/home/prabuddhi/bevfusion_original:/home/bevfusion" \
   -v "/media/prabuddhi/Crucial X9/bevfusion-main/data/nuscenes:/dataset" \
-  --shm-size=16g bevfusion /bin/bash
+  --shm-size=16g \
+  bevfusion_original /bin/bash
 ```
 
 * Replace the path with the actual dataset directory path on the host machine.
