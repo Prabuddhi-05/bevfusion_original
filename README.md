@@ -23,7 +23,7 @@ docker build -t bevfusion_original .
 
 ```bash
 docker run --gpus all -it \
-  --name bevfusion-original-dev-gpu \
+  --name bevfusion-original \
   -v "/home/prabuddhi/bevfusion_original:/home/bevfusion" \
   -v "/media/prabuddhi/Crucial X9/bevfusion-main/data/nuscenes:/dataset" \
   --shm-size=16g \
@@ -117,7 +117,7 @@ exit
 * Restart and reuse your named container without data loss:
 
 ```bash
-docker start -ai bevfusion-original-dev-gpu
+docker start -ai bevfusion-original
 ```
 
 * You can directly re-run evaluations or training as required inside this container.
