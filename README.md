@@ -1,6 +1,6 @@
 # BEVDepth 
 
-BEVDepth is a 3D object detector with a trustworthy depth estimation.\
+BEVDepth is a 3D object detector with a depth estimation strategy.\
 Fork of [Megvii-BaseDetection/BEVDepth](https://github.com/Megvii-BaseDetection/BEVDepth) with a conflict-free Docker stack (Torch 1.12/cu116, mmcv-full 1.6,\
 mmdet 2.25, mmdet3d 1.0.0rc4, mmseg 0.26)
 
