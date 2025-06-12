@@ -1,4 +1,4 @@
-# BEVDepth - CUDA 11.6 / Torch 1.12 Reproducible Environment 🚘🔭
+# BEVDepth 
 
 > **Bird’s-Eye-View depth & 3D object detection (camera + LiDAR)**\
 > Fork of [Megvii-BaseDetection/BEVDepth](https://github.com/Megvii-BaseDetection/BEVDepth)\
