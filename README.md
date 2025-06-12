@@ -1,6 +1,5 @@
 # BEVDepth 
 
-**Bird’s-Eye-View depth & 3D object detection (camera + LiDAR)**)\
 BEVDepth is a 3D object detector with a trustworthy depth estimation.\
 Fork of [Megvii-BaseDetection/BEVDepth](https://github.com/Megvii-BaseDetection/BEVDepth) with a conflict-free Docker stack (Torch 1.12/cu116, mmcv-full 1.6,\
 mmdet 2.25, mmdet3d 1.0.0rc4, mmseg 0.26)
