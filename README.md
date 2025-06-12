@@ -5,25 +5,23 @@ BEVDepth is a 3D object detector with a depth estimation strategy. This repo is 
 
 ---
 
-## 📂 Contents
+## Additions 
 
 | Item                                                                      | Purpose                                                                        |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | `docker/Dockerfile`                                                       | One-stage image build with full CUDA ops compilation.                          |
 | `requirements.txt` & `constraints.txt`                                    | All Python package versions pinned to avoid conflicts.                         |
-| `scripts/gen_info.py`                                                     | Enhanced: accepts `--dataroot` and `--save_dir` for flexible output locations. |
+| `scripts/gen_info.py`                                                     | MOdified: accepts `--dataroot` and `--save_dir` for flexible output locations. |
 | `bevdepth/exps/nuscenes/mv/bev_depth_lss_r50_256x704_128x128_24e_2key.py` | Modified experiment file for correct dataset paths and unique experiment name. |
-| `README.md`                                                               | Full setup instructions (this file).                                           |
-
 ---
 
-## 🛣️ Quick Start Guide
+## Quick Start Guide
 
 ### 1️⃣ Build Docker Image
 
 ```bash
 cd docker
-docker build -t bevdepth:cu116 .
+docker build -t bevdepth:original .
 ```
 
 ### 2️⃣ Create and Run Docker Container
