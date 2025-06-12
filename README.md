@@ -1,157 +1,133 @@
-# BEVDepth 
 
-BEVDepth is a 3D object detector with a depth estimation strategy. This repo is the fork of [Megvii-BaseDetection/BEVDepth](https://github.com/Megvii-BaseDetection/BEVDepth) with a conflict-free Docker stack.
-(Torch 1.12/cu116, mmcv-full 1.6,mmdet 2.25, mmdet3d 1.0.0rc4, mmseg 0.26)
+# BEVFusion Framework Setup and Execution
+
+This repository provides setup instructions and usage guidelines for running the BEVFusion framework for **3D Object Detection using LiDAR and Multi-view Camera Fusion in the Bird's Eye View** inside Docker. It is based on the `dev/fusion-configs` branch of the [original BEVFusion repository by MIT HAN Lab](https://github.com/mit-han-lab/bevfusion).
 
 ---
 
-## Additions 
+## Docker container setup
 
-| Item                                                                      | Purpose                                                                        |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `docker/Dockerfile`                                                       | One-stage image build with full CUDA ops compilation.                          |
-| `requirements.txt` & `constraints.txt`                                    | All Python package versions pinned to avoid conflicts.                         |
-| `scripts/gen_info.py`                                                     | MOdified: accepts `--dataroot` and `--save_dir` for flexible output locations. |
-| `bevdepth/exps/nuscenes/mv/bev_depth_lss_r50_256x704_128x128_24e_2key.py` | Modified experiment file for correct dataset paths and unique experiment name. |
+Created and re-used a named Docker container (**bevfusion**) for convenient integration and consistent use inside Visual Studio Code.
+
 ---
 
-## Quick Start Guide
+## First-time user setup
 
-### 1️⃣ Build Docker Image
+### 1. Build the Docker image
+
+Run this command only if the Dockerfile has been updated:
 
 ```bash
-cd docker
-docker build -t bevdepth:original .
+docker build -t bevfusion_original .
 ```
 
-### 2️⃣ Create and Run Docker Container
+### 2. Create and run a named Docker container
 
 ```bash
 docker run --gpus all -it \
-  --name bevdepth-cu116 \
-  --shm-size 16g \
-  -v "$HOME/BEVDepth:/workspace/BEVDepth" \
-  -v "/media/prabuddhi/Crucial X92/bevfusion-main/data/nuscenes:/workspace/data/nuScenes" \
-  bevdepth:cu116
+  --name bevfusion-original \
+  -v "/home/prabuddhi/bevfusion_original:/home/bevfusion" \
+  -v "/media/prabuddhi/Crucial X91/bevfusion-main/data/nuscenes:/dataset" \
+  --shm-size=16g \
+  bevfusion_original /bin/bash
 ```
 
-- Update dataset path as per your local directory.
+* Replace the path with the actual dataset directory path on the host machine.
+* You can either clone this repository from [https://github.com/Prabuddhi-05/bevfusion_original.git](https://github.com/Prabuddhi-05/bevfusion_original.git), or use the `dev/fusion-configs` branch of the original BEVFusion repository at [https://github.com/mit-han-lab/bevfusion.git](https://github.com/mit-han-lab/bevfusion.git).
+* Attach to this container via VS Code:
+  * Ctrl + Shift + P → Attach to an existing container
 
-### 3️⃣ Restart Existing Container
+### 3. Initial setup inside the container
+
+Run the following commands:
 
 ```bash
-docker start -ai bevdepth-cu116
+cd /home
+cd bevfusion
+python setup.py develop # Install BEVFusion in development mode
+mkdir -p data
+ln -s /dataset ./data/nuscenes # Create a symbolic link to connect the dataset on the host machine to Docker
 ```
+
+### 4. Fix NumPY related error
+
+**NumPy attributeError**:
+
+* Downgrade NumPy to resolve attribute errors:
+
+```bash
+conda install numpy=1.23.5 -y
+```
+
+### 5. Create swap memory (Prevents crashes)
+
+* Check memory usage (optional):
+
+```bash
+htop
+free -h
+```
+
+* Create a 64 GB swap file:
+
+```bash
+sudo fallocate -l 64G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+sudo bash -c "echo '/swapfile none swap sw 0 0' >> /etc/fstab"
+```
+
+### 6. Data preprocessing (Optional)
+
+* Edit the preprocessing script to skip unnecessary steps:
+* Comment out create_groundtruth_database(...) in `/home/bevfusion/tools/create_data.py`
+
+### 7. Run preprocessing:
+
+```bash
+python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes --version v1.0
+```
+
+### 8. Download pre-trained weights
+
+```bash
+./tools/download_pretrained.sh
+```
+
+### 9. Run evaluation
+
+```bash
+torchpack dist-run -np 1 python tools/test.py \
+  configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/convfuser.yaml \
+  pretrained/bevfusion-det.pth --eval bbox
+```
+
+### 10. Exit the container (While progress is being saved)
+
+```bash
+exit
+```
+
+## Subsequent runs (Reuse container)
+
+* Restart and reuse your named container without data loss:
+
+```bash
+docker start -ai bevfusion-original
+```
+
+* You can directly re-run evaluations or training as required inside this container.
 
 ---
 
-## ⚙️ One-Time Setup Inside Docker
+## Outputs
 
-### 0️⃣ Optional: Verify CUDA & Torch
+The model evaluates:
 
-```bash
-python - <<'PY'
-import torch; print(torch.__version__, torch.version.cuda)
-PY
-# Expected: 1.12.1  11.6
-```
-
-### 1️⃣ Generate NuScenes Metadata
-
-```bash
-mkdir -p /workspace/data/nuScenes_BEVDepth
-python scripts/gen_info.py \
-  --dataroot /workspace/data/nuScenes \
-  --save_dir /workspace/data/nuScenes_BEVDepth
-```
-
-### 2️⃣ Download Pretrained Weights
-
-```bash
-mkdir -p pretrained
-wget https://github.com/Megvii-BaseDetection/BEVDepth/releases/download/v0.0.2/bev_depth_lss_r50_256x704_128x128_24e_2key.pth \
-  -P pretrained/
-```
-
-### 3️⃣ (Optional) Re-compile CUDA Ops (only if upgrading Torch/CUDA)
-
-```bash
-# export CUDA_HOME=/usr/local/cuda
-# python setup.py clean --all && python setup.py develop --no-deps
-```
+* **3D object detection** using fused **6-camera and LiDAR inputs**.
+* Metrics include **NDS**, **mAP**, error metrics, and per-class results.
 
 ---
 
-## 🚦 Running BEVDepth
-
-### Sanity Check: Evaluation
-
-```bash
-python bevdepth/exps/nuscenes/mv/bev_depth_lss_r50_256x704_128x128_24e_2key.py \
-  --ckpt_path pretrained/bev_depth_lss_r50_256x704_128x128_24e_2key.pth \
-  --gpus 1 -b 1 -e
-```
-
-> Expected: mAP ≈ 0.33 / NDS ≈ 0.44
-
-### Training / Fine-tuning
-
-```bash
-python bevdepth/exps/nuscenes/mv/bev_depth_lss_r50_256x704_128x128_24e_2key.py \
-  --amp_backend native \
-  --gpus 1 -b 1
-```
-
-- Increase `-b` and `--gpus` based on hardware availability.
-
----
-
-## 📝 Code Changes Summary
-
-| File                                            | Change                                             | Reason                           |
-| ----------------------------------------------- | -------------------------------------------------- | -------------------------------- |
-| `scripts/gen_info.py`                           | Added `argparse` for `--dataroot` and `--save_dir` | Flexible output directories      |
-| `bev_depth_lss_r50_256x704_128x128_24e_2key.py` | Adjusted experiment name, dataset path             | Clean experiment structure       |
-| All other code                                  | Unchanged                                          | Only dataset path logic modified |
-
----
-
-## 🤩 Library Versions (Fully Frozen)
-
-```
-torch-1.12.1+cu116        mmcv-full-1.6.0
-torchvision-0.13.1+cu116  mmdet-2.25.0
-torchaudio-0.12.1+cu116   mmdet3d-1.0.0rc4
-cuda-11.6 runtime         mmsegmentation-0.26.0
-numba-0.56.4              llvmlite-0.39.1
-```
-
-> Rebuild = exact reproduction.
-
----
-
-## 🔧 Troubleshooting
-
-| Issue                             | Solution                                                           |
-| --------------------------------- | ------------------------------------------------------------------ |
-| MMCV version conflict             | `pip install mmcv-full==1.6.0 -f ...`                              |
-| CUDA handle errors                | Ensure Torch/CUDA versions match image.                            |
-| Missing voxel\_pooling\_inference | `python setup.py clean --all && python setup.py develop --no-deps` |
-| VS Code remote can't see packages | Always attach to the container correctly (`bevdepth-cu116`).       |
-
----
-
-## 📄 Citation
-
-```bibtex
-@article{li2022bevdepth,
-  title={BEVDepth: Acquisition of Reliable Depth for Multi-view 3D Object Detection},
-  author={Li, Yinhao and Ge, Zheng and ...},
-  journal={arXiv preprint arXiv:2206.10092},
-  year={2022}
-}
-```
-
----
-
-*Happy BEV research! 🚀 — Feel free to open issues or PRs for updates or fixes.*
+For detailed framework documentation, visit [BEVFusion GitHub](https://github.com/mit-han-lab/bevfusion).
